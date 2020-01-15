@@ -23,8 +23,8 @@ flags.DEFINE_integer('num_classes', 1, 'number of classes in the model')
 
 def main(_argv):
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    if len(physical_devices) > 0:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    for device in physical_devices:
+        tf.config.experimental.set_memory_growth(device, True)
 
     if FLAGS.tiny:
         yolo = YoloV3Tiny(classes=FLAGS.num_classes)
@@ -43,8 +43,7 @@ def main(_argv):
         dataset = dataset.shuffle(512)
         img_raw, _label = next(iter(dataset.take(1)))
     else:
-        img_raw = tf.image.decode_image(
-            open(FLAGS.image, 'rb').read(), channels=3)
+        img_raw = tf.image.decode_image(open(FLAGS.image, 'rb').read(), channels=3)
 
     img = tf.expand_dims(img_raw, 0)
     img = transform_images(img, FLAGS.size)

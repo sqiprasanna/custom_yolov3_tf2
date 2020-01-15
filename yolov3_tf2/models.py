@@ -22,10 +22,10 @@ from tensorflow.keras.losses import (
 from .batch_norm import BatchNormalization
 from .utils import broadcast_iou
 
-flags.DEFINE_integer('yolo_max_boxes', 100,
+flags.DEFINE_integer('yolo_max_boxes', 200,
                      'maximum number of boxes per image')
-flags.DEFINE_float('yolo_iou_threshold', 0.5, 'iou threshold')
-flags.DEFINE_float('yolo_score_threshold', 0.5, 'score threshold')
+flags.DEFINE_float('yolo_iou_threshold', 0.1, 'iou threshold')
+flags.DEFINE_float('yolo_score_threshold', 0.1, 'score threshold')
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45),
                          (59, 119), (116, 90), (156, 198), (373, 326)],
@@ -249,13 +249,13 @@ def YoloV3Tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
     
     boxes_0 = Lambda(lambda x: yolo_boxes(x, anchors[masks[0]], classes),
                      name='yolo_boxes_0')(output_0)
-    print("OUTPUT Boxes-0:-",boxes_0)
+    # print("OUTPUT Boxes-0:-",boxes_0)
     boxes_1 = Lambda(lambda x: yolo_boxes(x, anchors[masks[1]], classes),
                      name='yolo_boxes_1')(output_1)
-    print("OUTPUT Boxes-1:-",boxes_1)
+    # print("OUTPUT Boxes-1:-",boxes_1)
     outputs = Lambda(lambda x: yolo_nms(x, anchors, masks, classes),
                      name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
-    print("FINAL OUTPUT:-",outputs)
+    # print("FINAL OUTPUT:-",outputs)
     return Model(inputs, outputs, name='yolov3_tiny')
 
 

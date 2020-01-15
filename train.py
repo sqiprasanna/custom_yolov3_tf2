@@ -1,6 +1,6 @@
 from absl import app, flags, logging
 from absl.flags import FLAGS
-
+import os
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -46,8 +46,14 @@ flags.DEFINE_integer('weights_num_classes', None, 'specify num class for `weight
 
 def main(_argv):
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    if len(physical_devices) > 0:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    for device in physical_devices: 
+        tf.config.experimental.set_memory_growth(device, True)
+        
+    # if len(physical_devices) > 0:
+        # config.gpu_options.allow_growth = True
+        # config.log_device_placement = True # to log device placement (on which device the operation ran)
+        
+
 
     if FLAGS.tiny:
         model = YoloV3Tiny(FLAGS.size, training=True,
@@ -168,16 +174,23 @@ def main(_argv):
 
             avg_loss.reset_states()
             avg_val_loss.reset_states()
-            model.save_weights(
-                'checkpoints_v1/yolov3_train_{}.tf'.format(epoch))
+            
+            if FLAGS.tiny == True:
+                if not os.path.exists("./checkpoints_tiny_{}".format(FLAGS.batch_size)):
+                    os.makedirs('checkpoints_tiny_{}'.format(FLAGS.batch_size))
+                model.save_weights('checkpoints_tiny_{}/yolo_tiny_{}_{}.tf'.format(FLAGS.batch_size,FLAGS.batch_size,epoch))    
+            else:
+                if not os.path.exists("./checkpoints_{}".format(FLAGS.batch_size)):
+                    os.makedirs('checkpoints_{}'.format(FLAGS.batch_size))
+                model.save_weights('checkpoints_{}/yolov3_train_{}_{}.tf'.format(FLAGS.batch_size,FLAGS.batch_size,epoch))
     else:
         model.compile(optimizer=optimizer, loss=loss,
-                      run_eagerly=(FLAGS.mode == 'eager_fit'))
+                      run_eagerly=(FLAGS.mode == 'eager_fit'),metrics=['accuracy'])
 
         callbacks = [
             ReduceLROnPlateau(verbose=1),
-            EarlyStopping(patience=3, verbose=1),
-            ModelCheckpoint('checkpoints_v1/yolov3_train_{epoch}.tf',
+            # EarlyStopping(patience=3, verbose=1),
+            ModelCheckpoint('checkpoints_{}/yolov3_train_{}.tf'.format(FLAGS.batch_size,FLAGS.batch_size),
                             verbose=1, save_weights_only=True),
             TensorBoard(log_dir='logs')
         ]

@@ -145,20 +145,8 @@ python train.py --batch_size 32 --dataset train.record --val_dataset test.record
 
 python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --num_classes 1 --classes ./Dataset/obj.names --tiny
 
-python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 1 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3.tf --weights_num_classes 80 
+python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 1 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3-tiny.tf --weights_num_classes 80 
 
-3 classes 
-python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 3 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3-tiny.tf --weights_num_classes 80 --tiny
-
-nohup python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 3 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3-tiny.tf --weights_num_classes 80 --tiny &
-Hit enter twice after above
-
-Started training
-batch_size -4 epochs- 50
-
-1, train: 226.78326416015625, val: 30.12978172302246
-trian and val loss after frst epoch
-628 steps in train and 182 steps in validation
 
 keep directory structure
 Object-Detection
@@ -173,22 +161,6 @@ Object-Detection
 --...yourimages.jpg
 -training
 -xml_to_csv.py
-
-
-
-SERVER
-nohup python <command> &
-Hit enter twice after above
-
-ps -ef|grep <keyword>
-it will show a process ID
-kill <pid>
-check using ps -ef|grep <keyword>
-make sure it is killed
-there will be a nohup.out file
-
-
-
 
 
 
