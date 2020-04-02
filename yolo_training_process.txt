@@ -1,0 +1,230 @@
+YOLO training:-
+https://medium.com/@manivannan_data/how-to-train-yolov3-to-detect-custom-objects-ccbcafeb13d2
+
+create annotations for all images
+annotation format:- class_id,xmin,ymin,xmax,ymax
+yolo format:-  class_id,center_x,center_y,w,h
+
+Run convert.py to convert into yolo format
+
+create train.txt and test.txt
+
+create obj_classes.data and obj_classes.names files.
+In obj_classes.data add below lines
+classes= 2 
+train  = cat-dog-train.txt  
+valid  = cat-dog-test.txt  
+names = cat-dog-obj.names  
+backup = backup/
+
+IN obj_classes.names add classes according to which your class_id is created in classes.txt while labelling
+
+
+
+Take any .cfg file from yolo (https://pjreddie.com/darknet/yolo/):_
+
+Line 3: set batch=24, this means we will be using 24 images for every training step
+Line 4: set subdivisions=8, the batch will be divided by 8 to decrease GPU VRAM requirements.
+Line 127: set filters=(classes + 5)*3 in our case filters=21
+Line 135: set classes=2, the number of categories we want to detect
+Line 171: set filters=(classes + 5)*3 in our case filters=21
+Line 177: set classes=2, the number of categories we want to detect
+
+change classes,filters in which ever cfg file you use
+In obj_classes.data add below lines
+classes= 2 
+train  = cat-dog-train.txt  
+valid  = cat-dog-test.txt  
+names = cat-dog-obj.names  
+backup = backup/
+
+IN obj_classes.names add classes according to which your class_id is created in classes.txt while labelling
+
+
+KERAS
+mixing training and validation sets 
+
+create obj_classes.data and obj_classes.names files.
+ 
+using yolo_pre_initializing notebook code get train.txt 
+format is given in https://github.com/michhar/keras-yolo3-custom
+Example of train.txt
+path/to/img1.jpg 50,100,150,200,0 30,50,200,120,3
+path/to/img2.jpg 120,300,250,600,2
+
+
+use convert.py to convert yolo weights to .h5 keras weights file
+
+link for getting val_loss nan and high loss 
+https://github.com/qqwweee/keras-yolo3/issues/171#issuecomment-522287613
+
+changed freeze_mode =1
+changed loss function in tiny_loss raw_true_wh = K.log(y_true[l][..., 2:4] / anchors[anchor_mask[l]] * input_shape[::-1] + 1e-10)
+
+for original keras-custom
+python train.py --model yolov3-tiny-weights.h5 --annot_path train_full_2.txt --anchors_path model_data/yolo_tiny_anchors.txt --class_path yolo_custom.names --gpu_num=1
+
+
+
+
+https://github.com/jacksonxliu/YOLOv3-tiny-custom-object-detection
+https://github.com/AlexeyAB/darknet
+change openmp =1 in makefile after clone darknet repo
+change configuration in cfg based on ur requirements follow https://github.com/AlexeyAB/darknet/#how-to-train-to-detect-your-custom-objects
+create obj.names and obj.data files 
+generate trina.txt and test.txt files with only file names in them
+
+
+TRAINING --------------------------------------------------
+download dataset from above process
+change labels into yolo format
+create train.txt test.txt
+download repo from https://github.com/AlexeyAB/darknet/
+change OPENMP = 1 in makefile and run make in cmd
+change params in cfg as suggested in alexyAB repo
+changed no. of filters
+
+download  darknet53.conv.74 from wget https://pjreddie.com/media/files/darknet53.conv.74
+
+
+
+
+
+trained Job
+Job file 25869 Job_tiny_new
+./darknet detector train cfg/yolo_custom.data cfg/yolov3-tiny_new.cfg  yolov3-tiny.conv.15 -map 
+
+Job File 25861
+./darknet detector train cfg/yolo_custom.data cfg/yolov3-tiny_new.cfg darknet53.conv.74 -map
+
+Job File 25874
+./darknet detector train cfg/yolo_custom.data cfg/yolov3-tiny_new.cfg  backup/yolov3-tiny_new_best_v1.weights -map
+backup_cont/ for weights files
+
+
+
+YOLOv3 TFV2
+https://github.com/zzh8829/yolov3-tf2
+conda env create -f conda-cpu.yml
+conda activate yolov3-tf2-cpu
+
+# yolov3
+wget https://pjreddie.com/media/files/yolov3.weights -O data/yolov3.weights
+python convert.py
+
+# yolov3-tiny
+wget https://pjreddie.com/media/files/yolov3-tiny.weights -O data/yolov3-tiny.weights
+python convert.py --weights ./data/yolov3-tiny.weights --output ./checkpoints/yolov3-tiny.tf --tiny
+
+
+download dataset from above and convert labels into yolo format and then use code to covnvert txt files to xml
+
+code for changing yolo to voc format(txt to xml format)
+https://gist.github.com/goodhamgupta/7ca514458d24af980669b8b1c8bcdafd   code by AdonaiVera
+https://github.com/ZZANZU/YOLO-convert-txt-2-xml/blob/master/convert_txt_2_xml.py
+
+
+for xmt to csv conversion use below code
+https://github.com/datitran/raccoon_dataset/blob/master/xml_to_csv.py
+
+for getting tfrecords we need tf < 2.0
+now generate tf record from https://github.com/datitran/raccoon_dataset/blob/master/generate_tfrecord.py
+add below lines after for loop iterrows
+this will eliminate bounding boxes which are out of image boundaries
+if (row['xmin'] / width) > 0 and (row['xmax'] / width) > 0 and (row['ymin'] / height) > 0 and (row['ymax'] / height) > 0 and (row['xmin']/row['ymin']) > 0 and (row['xmax']/row['ymax']) < 1:
+python tf_record.py --csv_input=Dataset/train_annotation_labels.csv  --output_path=train.record
+change row_label = 'Person' in line 31
+
+add object_detection.utils import dataset_util.py file in folder
+
+python tf_record.py --csv_input=Dataset/train_annotation_labels.csv  --output_path=train.record
+
+python tf_record.py --csv_input=Dataset/test_annotation_labels.csv  --output_path=test.record
+
+python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 1 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3-tiny.tf --weights_num_classes 80 --tiny
+
+python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --num_classes 1 --classes ./Dataset/obj.names --tiny
+
+python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 1 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3.tf --weights_num_classes 80 
+
+3 classes 
+python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 3 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3-tiny.tf --weights_num_classes 80 --tiny
+
+nohup python train.py --batch_size 32 --dataset train.record --val_dataset test.record --epochs 50 --mode eager_tf --transfer darknet --num_classes 3 --classes ./Dataset/obj.names --weights ./checkpoints/yolov3-tiny.tf --weights_num_classes 80 --tiny &
+Hit enter twice after above
+
+Started training
+batch_size -4 epochs- 50
+
+1, train: 226.78326416015625, val: 30.12978172302246
+trian and val loss after frst epoch
+628 steps in train and 182 steps in validation
+
+keep directory structure
+Object-Detection
+-data/
+--test_labels.csv
+--train_labels.csv
+-images/
+--test/
+---testingimages.jpg
+--train/
+---testingimages.jpg
+--...yourimages.jpg
+-training
+-xml_to_csv.py
+
+
+
+SERVER
+nohup python <command> &
+Hit enter twice after above
+
+ps -ef|grep <keyword>
+it will show a process ID
+kill <pid>
+check using ps -ef|grep <keyword>
+make sure it is killed
+there will be a nohup.out file
+
+
+
+
+
+
+https://github.com/RohanDeySarkar/Kaggle-challenges/blob/master/Auto-tag%20images%20of%20galas.ipynb
+https://github.com/JAISHAREERAM7778/Classification-Of-Images-using-low-Code-Monk-Pytorch/blob/master/Untitled11.ipynb
+https://www.kaggle.com/vincee/intel-image-classification-cnn-keras
+toughest image classification problems
+https://medium.com/neuralspace/kaggle-1-winning-approach-for-image-classification-challenge-9c1188157a86
+https://www.researchgate.net/topic/Image-Classification
+https://chatbotslife.com/know-your-intent-sota-results-in-intent-classification-8e1ca47f364c
+
+
+https://www.geeksforgeeks.org/modular-exponentiation-power-in-modular-arithmetic/
+https://crio.do/home/me/ME_PS_DS1
+https://crio.do/home/workspace
+https://crio.do/home/me/ME_QMONEY
+https://www.geeksforgeeks.org/must-coding-questions-company-wise/?ref=leftbar
+
+
+
+
+
+download coco image dataset
+git clone https://github.com/cocodataset/cocoapi.git
+copy code from https://github.com/cocodataset/cocoapi/issues/271
+
+$ git clone https://github.com/pdollar/coco/
+$ cd coco/PythonAPI
+$ make
+$ python setup.py install
+$ cd ../..
+$ rm -r coco
+
+run 
+python -m pip install Cython
+python setup.py build_ext install --user 
+python setup.py build_ext --inplace --user in cocoapi/PythonAPI folder
+
+get instances_train2017.json from online
